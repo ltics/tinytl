@@ -4,10 +4,10 @@ use std::fmt::*;
 
 #[derive(Clone)]
 pub enum Expr {
-    EVar(String),
-    EAbs(String, Box<Expr>),
+    EVar(&'static str),
+    EAbs(&'static str, Box<Expr>),
     EApp(Box<Expr>, Box<Expr>),
-    ELet(String, Box<Expr>, Box<Expr>)
+    ELet(&'static str, Box<Expr>, Box<Expr>)
 }
 
 use self::Expr::*;
@@ -24,7 +24,11 @@ impl Display for Expr {
 }
 
 fn main() {
-    println!("{}", EVar(String::from("x")));
-    println!("{}", EAbs(String::from("x"), box EVar(String::from("x"))));
-    println!("{}", EApp(box EVar(String::from("x")), box EVar(String::from("y"))));
+    println!("{}", EVar("x"));
+    println!("{}", EAbs("x", box EVar("x")));
+    println!("{}", EApp(box EVar("x"), box EVar("y")));
+
+    //println!("{}", EVar(String::from("x")));
+    //println!("{}", EAbs(String::from("x"), box EVar(String::from("x"))));
+    //println!("{}", EApp(box EVar(String::from("x")), box EVar(String::from("y"))));
 }
