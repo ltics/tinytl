@@ -23,12 +23,13 @@ impl Display for Expr {
     }
 }
 
-fn main() {
-    println!("{}", EVar("x"));
-    println!("{}", EAbs("x", box EVar("x")));
-    println!("{}", EApp(box EVar("x"), box EVar("y")));
+#[test]
+fn display_spec() {
+    assert_eq!(format!("{}", EVar("x")), "x");
+    assert_eq!(format!("{}", EAbs("x", box EVar("x"))), "λ x → x");
+    assert_eq!(format!("{}", EApp(box EVar("x"), box EVar("y"))), "x(y)");
+    assert_eq!(format!("{}", ELet("x", box EVar("x"), box EApp(box EVar("x"), box EVar("y")))), "let x = x in x(y)");
+}
 
-    //println!("{}", EVar(String::from("x")));
-    //println!("{}", EAbs(String::from("x"), box EVar(String::from("x"))));
-    //println!("{}", EApp(box EVar(String::from("x")), box EVar(String::from("y"))));
+fn main() {
 }
