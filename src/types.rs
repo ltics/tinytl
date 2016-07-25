@@ -48,27 +48,24 @@ impl Display for Scheme {
     }
 }
 
-pub type Subrule<'srl> = HashMap<&'static str, &'srl Type>;
+//pub type Subrule<'srl> = HashMap<&'static str, &'srl Type>;
 
-/*fn compose<'a>(s2: Subrule<'a>, s1: Subrule<'a>) -> Subrule<'a> {
-    let s11 = s1.clone();
-    let s22 = s2.clone();
-    //s11
-    let mut s3 = Subrule::new();
-    for (key, val) in s11.iter() {
-        let new_val = &(val.subst(&s22).clone());
-        s3.insert(key, new_val);
+#[allow(dead_code)]
+fn compose(s2: &HashMap<&'static str, Type>, s1: &HashMap<&'static str, Type>) -> HashMap<&'static str, Type> {
+    let mut s3: HashMap<&'static str, Type> = HashMap::new();
+    for (key, val) in s1.iter() {
+        s3.insert(key, (val.subst(s2)));
     }
-    for (key, val) in s22.iter() {
-        s3.insert(key, &val);
+    for (key, val) in s2.iter() {
+        s3.insert(key, val.clone());
     }
     s3
-}*/
+}
 
 pub trait TypeVars<A> {
     fn all_vars(&self) -> HashSet<&'static str>;
     fn free_vars(&self) -> HashSet<&'static str>;
-    fn subst(&self, &Subrule) -> A;
+    fn subst(&self, &HashMap<&'static str, Type>) -> A;
 }
 
 impl TypeVars<Type> for Type {
@@ -84,7 +81,7 @@ impl TypeVars<Type> for Type {
         self.all_vars()
     }
 
-    fn subst(&self, s: &Subrule) -> Type {
+    fn subst(&self, s: &HashMap<&'static str, Type>) -> Type {
         match *self {
             TVar(ref n) => match s.get(n) {
                 Some(t) => (*t).clone(),
@@ -119,7 +116,7 @@ impl TypeVars<Scheme> for Scheme {
         }
     }
 
-    fn subst(&self, s: &Subrule) -> Scheme {
+    fn subst(&self, s: &HashMap<&'static str, Type>) -> Scheme {
         match *self {
             Mono(ref t) => Mono(Box::new(t.subst(s))),
             Poly(ref a, ref t) => {
