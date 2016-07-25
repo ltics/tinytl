@@ -54,7 +54,7 @@ impl Display for Scheme {
 fn compose(s2: &HashMap<&'static str, Type>, s1: &HashMap<&'static str, Type>) -> HashMap<&'static str, Type> {
     let mut s3: HashMap<&'static str, Type> = HashMap::new();
     for (key, val) in s1.iter() {
-        s3.insert(key, (val.subst(s2)));
+        s3.insert(key, val.subst(s2));
     }
     for (key, val) in s2.iter() {
         s3.insert(key, val.clone());
