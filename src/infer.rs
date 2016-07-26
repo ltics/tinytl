@@ -23,21 +23,17 @@ pub fn generalize(env: &HashMap<&'static str, Scheme>, t: &Type) -> Scheme {
     })
 }
 
-pub fn update(env: &HashMap<char, Type>, a: &char) -> HashMap<char, Type> {
-    unsafe {
-        let mut new_env = (*env).clone();
-        new_env.insert(*a, TVar(VAR as char));
-        VAR += 1;
-        new_env
+#[allow(dead_code)]
+pub fn instantiate(t: &Scheme) -> Type {
+    let mut env: HashMap<char, Type> = HashMap::new();
+    for var in t.all_vars().difference(&t.free_vars()) {
+        unsafe {
+            env.insert(*var, TVar(VAR as char));
+            VAR += 1;
+        }
     }
+    replace_free_vars(t, &env)
 }
-
-/*#[allow(dead_code)]
-pub fn instantiate(scheme: &Scheme) -> Type {
-    let t = (*scheme).clone();
-    let bound_vars = (t.all_vars()).clone().difference(&t.free_vars());
-    TInt
-}*/
 
 #[allow(dead_code)]
 pub fn make_single_subrule(tname: &char, t: &Type) -> HashMap<char, Type> {
