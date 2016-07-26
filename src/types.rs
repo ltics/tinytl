@@ -9,7 +9,7 @@ pub use self::Scheme::*;
 pub enum Type {
     TInt,
     TBool,
-    TVar(&'static str),
+    TVar(char),
     TArrow(Box<Type>, Box<Type>)
 }
 
@@ -36,7 +36,7 @@ impl Display for Type {
 #[derive(Clone, Eq, PartialEq)]
 pub enum Scheme {
     Mono(Box<Type>),
-    Poly(&'static str, Box<Scheme>)
+    Poly(char, Box<Scheme>)
 }
 
 impl Display for Scheme {
@@ -48,28 +48,28 @@ impl Display for Scheme {
     }
 }
 
-//pub type Subrule<'srl> = HashMap<&'static str, &'srl Type>;
+//pub type Subrule<'srl> = HashMap<char, &'srl Type>;
 
 #[allow(dead_code)]
-fn compose(s2: &HashMap<&'static str, Type>, s1: &HashMap<&'static str, Type>) -> HashMap<&'static str, Type> {
-    let mut s3: HashMap<&'static str, Type> = HashMap::new();
+fn compose(s2: &HashMap<char, Type>, s1: &HashMap<char, Type>) -> HashMap<char, Type> {
+    let mut s3: HashMap<char, Type> = HashMap::new();
     for (key, val) in s1.iter() {
-        s3.insert(key, val.subst(s2));
+        s3.insert(*key, val.subst(s2));
     }
     for (key, val) in s2.iter() {
-        s3.insert(key, val.clone());
+        s3.insert(*key, val.clone());
     }
     s3
 }
 
 pub trait TypeVars<A> {
-    fn all_vars(&self) -> HashSet<&'static str>;
-    fn free_vars(&self) -> HashSet<&'static str>;
-    fn subst(&self, &HashMap<&'static str, Type>) -> A;
+    fn all_vars(&self) -> HashSet<char>;
+    fn free_vars(&self) -> HashSet<char>;
+    fn subst(&self, &HashMap<char, Type>) -> A;
 }
 
 impl TypeVars<Type> for Type {
-    fn all_vars(&self) -> HashSet<&'static str> {
+    fn all_vars(&self) -> HashSet<char> {
         match *self {
             TVar(ref a) => vec!(*a).into_iter().collect(),
             TArrow(ref t1, ref t2) => t1.all_vars().union(&t2.all_vars()).cloned().collect(),
@@ -77,15 +77,15 @@ impl TypeVars<Type> for Type {
         }
     }
 
-    fn free_vars(&self) -> HashSet<&'static str> {
+    fn free_vars(&self) -> HashSet<char> {
         self.all_vars()
     }
 
-    fn subst(&self, s: &HashMap<&'static str, Type>) -> Type {
+    fn subst(&self, s: &HashMap<char, Type>) -> Type {
         match *self {
             TVar(ref n) => match s.get(n) {
                 Some(t) => (*t).clone(),
-                None => TVar(n)
+                None => TVar(*n)
             },
             TArrow(ref t1, ref t2) => TArrow(Box::new(t1.subst(s)), Box::new(t2.subst(s))),
             _ => self.clone()
@@ -94,18 +94,18 @@ impl TypeVars<Type> for Type {
 }
 
 impl TypeVars<Scheme> for Scheme {
-    fn all_vars(&self) -> HashSet<&'static str> {
+    fn all_vars(&self) -> HashSet<char> {
         match *self {
             Mono(ref t) => t.all_vars(),
             Poly(ref a, ref t) => {
                 let mut av = t.all_vars();
-                av.insert(a);
+                av.insert(*a);
                 av
             } 
         }
     }
 
-    fn free_vars(&self) -> HashSet<&'static str> {
+    fn free_vars(&self) -> HashSet<char> {
         match *self {
             Mono(ref t) => t.free_vars(),
             Poly(ref a, ref t) => {
@@ -116,13 +116,13 @@ impl TypeVars<Scheme> for Scheme {
         }
     }
 
-    fn subst(&self, s: &HashMap<&'static str, Type>) -> Scheme {
+    fn subst(&self, s: &HashMap<char, Type>) -> Scheme {
         match *self {
             Mono(ref t) => Mono(Box::new(t.subst(s))),
             Poly(ref a, ref t) => {
                 let mut rule = s.clone();
                 rule.remove(a);
-                Poly(a, Box::new(t.subst(&rule)))
+                Poly(*a, Box::new(t.subst(&rule)))
             }
         }
     }
