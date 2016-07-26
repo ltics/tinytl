@@ -55,3 +55,19 @@ pub fn assoc_env(tname: &'static str, scheme: &Scheme, env: &HashMap<&'static st
     new_env.insert(tname, (*scheme).clone());
     new_env
 }
+
+#[allow(dead_code)]
+pub fn unify(t1: &Type, t2: &Type) -> HashMap<char, Type> {
+    match ((*t1).clone(), (*t2).clone()) {
+        (TInt, TInt) => HashMap::new(),
+        (TBool, TBool) => HashMap::new(),
+        (TVar(n), t) => make_single_subrule(&n, &t),
+        (t, TVar(n)) => make_single_subrule(&n, &t),
+        (TArrow(ref tl1, ref tr1), TArrow(ref tl2, ref tr2)) => {
+            let s1 = &unify(tl1, tl2);
+            let s2 = &unify(&tr1.subst(s1), &tr2.subst(s1));
+            compose(s2, s1)
+        },
+        _ => HashMap::new()
+    }
+}

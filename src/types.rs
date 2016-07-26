@@ -5,7 +5,7 @@ pub use self::Type::*;
 pub use self::Scheme::*;
 
 #[allow(dead_code)]
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Type {
     TInt,
     TBool,
@@ -33,7 +33,7 @@ impl Display for Type {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Scheme {
     Mono(Box<Type>),
     Poly(char, Box<Scheme>)
@@ -51,7 +51,7 @@ impl Display for Scheme {
 //pub type Subrule<'srl> = HashMap<char, &'srl Type>;
 
 #[allow(dead_code)]
-fn compose(s2: &HashMap<char, Type>, s1: &HashMap<char, Type>) -> HashMap<char, Type> {
+pub fn compose(s2: &HashMap<char, Type>, s1: &HashMap<char, Type>) -> HashMap<char, Type> {
     let mut s3: HashMap<char, Type> = HashMap::new();
     for (key, val) in s1.iter() {
         s3.insert(*key, val.subst(s2));
