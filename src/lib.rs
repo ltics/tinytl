@@ -4,4 +4,4 @@
 pub mod syntax;
 pub mod types;
 pub mod env;
-
+pub mod infer;
