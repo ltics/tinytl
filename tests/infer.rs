@@ -3,9 +3,15 @@
 #![plugin(stainless)]
 
 extern crate tinytl;
+pub use tinytl::syntax::*;
 pub use tinytl::types::*;
 pub use tinytl::infer::*;
+pub use tinytl::env::*;
 pub use std::collections::HashMap;
+
+pub fn run_infer_spec(expr: &Expr, expect: &'static str) {
+    assert_eq!(format!("{}", generalize(&HashMap::new(), &infer(&get_assumptions(), expr))), expect);
+}
 
 describe! infer_spec {
     it "should unify" {
@@ -19,5 +25,9 @@ describe! infer_spec {
         assert_eq!(subrule1.get(&'b'), Some(&TInt));
         assert_eq!(subrule2.get(&'a'), Some(&TArrow(Box::new(TVar('c')), Box::new(TVar('c')))));
         assert_eq!(subrule2.get(&'b'), Some(&TVar('c')));
+    }
+
+    it "should infer" {
+        run_infer_spec(&EVar("id"), "∀a. a → a");
     }
 }

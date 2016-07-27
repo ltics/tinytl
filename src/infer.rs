@@ -23,7 +23,7 @@ fn occurs(tname: &char, t: &Type) -> bool {
     t.free_vars().contains(tname)
 }
 
-fn generalize(env: &HashMap<&'static str, Scheme>, t: &Type) -> Scheme {
+pub fn generalize(env: &HashMap<&'static str, Scheme>, t: &Type) -> Scheme {
     t.free_vars().difference(&env.free_vars()).fold(Mono(Box::new((*t).clone())), |scheme, fv| {
         Poly(*fv, Box::new(scheme))
     })
@@ -74,7 +74,7 @@ pub fn unify(t1: &Type, t2: &Type) -> HashMap<char, Type> {
     }
 }
 
-pub fn algw(env: &HashMap<&'static str, Scheme>, expr: &Expr) -> (HashMap<char, Type>, Type) {
+fn algw(env: &HashMap<&'static str, Scheme>, expr: &Expr) -> (HashMap<char, Type>, Type) {
     match *expr {
         EVar(ref name) => match env.get(name) {
             Some(t) => (HashMap::new(), instantiate(t)),
@@ -102,4 +102,9 @@ pub fn algw(env: &HashMap<&'static str, Scheme>, expr: &Expr) -> (HashMap<char, 
             (compose(&s2, &s1), body_mono)
         }
     }
+}
+
+pub fn infer(env: &HashMap<&'static str, Scheme>, expr: &Expr) -> Type {
+    let (_, t) = algw(env, expr);
+    t
 }
