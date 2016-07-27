@@ -1,30 +1,35 @@
 use std::collections::HashMap;
+use syntax::*;
 use types::*;
 
 static mut VAR: u8 = 97;
 
-#[allow(dead_code)]
-pub fn replace_free_vars(scheme: &Scheme, rule: &HashMap<char, Type>) -> Type {
+fn get_new_var() -> Type {
+    unsafe {
+        let fresh = TVar(VAR as char);
+        VAR += 1;
+        fresh
+    }
+}
+
+fn replace_free_vars(scheme: &Scheme, rule: &HashMap<char, Type>) -> Type {
     match *scheme {
         Mono(ref t) => t.subst(rule),
         Poly(_, ref t) => replace_free_vars(t, rule)
     }
 }
 
-#[allow(dead_code)]
-pub fn occurs(tname: &char, t: &Type) -> bool {
+fn occurs(tname: &char, t: &Type) -> bool {
     t.free_vars().contains(tname)
 }
 
-#[allow(dead_code)]
-pub fn generalize(env: &HashMap<&'static str, Scheme>, t: &Type) -> Scheme {
+fn generalize(env: &HashMap<&'static str, Scheme>, t: &Type) -> Scheme {
     t.free_vars().difference(&env.free_vars()).fold(Mono(Box::new((*t).clone())), |scheme, fv| {
         Poly(*fv, Box::new(scheme))
     })
 }
 
-#[allow(dead_code)]
-pub fn instantiate(t: &Scheme) -> Type {
+fn instantiate(t: &Scheme) -> Type {
     let mut env: HashMap<char, Type> = HashMap::new();
     for var in t.all_vars().difference(&t.free_vars()) {
         unsafe {
@@ -35,8 +40,7 @@ pub fn instantiate(t: &Scheme) -> Type {
     replace_free_vars(t, &env)
 }
 
-#[allow(dead_code)]
-pub fn make_single_subrule(tname: &char, t: &Type) -> HashMap<char, Type> {
+fn make_single_subrule(tname: &char, t: &Type) -> HashMap<char, Type> {
     match (*tname, (*t).clone()) {
         (a, TVar(name)) if a == name => HashMap::new(),
         (a, ref t) if occurs(&a, t) => panic!("occurs check fails"),
@@ -48,15 +52,13 @@ pub fn make_single_subrule(tname: &char, t: &Type) -> HashMap<char, Type> {
     }
 }
 
-#[allow(dead_code)]
-pub fn assoc_env(tname: &'static str, scheme: &Scheme, env: &HashMap<&'static str, Scheme>) -> HashMap<&'static str, Scheme> {
+fn assoc_env(tname: &'static str, scheme: &Scheme, env: &HashMap<&'static str, Scheme>) -> HashMap<&'static str, Scheme> {
     let mut new_env = (*env).clone();
     new_env.remove(tname);
     new_env.insert(tname, (*scheme).clone());
     new_env
 }
 
-#[allow(dead_code)]
 pub fn unify(t1: &Type, t2: &Type) -> HashMap<char, Type> {
     match ((*t1).clone(), (*t2).clone()) {
         (TInt, TInt) => HashMap::new(),
@@ -69,5 +71,35 @@ pub fn unify(t1: &Type, t2: &Type) -> HashMap<char, Type> {
             compose(s2, s1)
         },
         _ => HashMap::new()
+    }
+}
+
+pub fn algw(env: &HashMap<&'static str, Scheme>, expr: &Expr) -> (HashMap<char, Type>, Type) {
+    match *expr {
+        EVar(ref name) => match env.get(name) {
+            Some(t) => (HashMap::new(), instantiate(t)),
+            None => panic!("unbound variable: {}", name)
+        },
+        EAbs(ref name, ref expr) => {
+            let fresh = get_new_var();
+            let new_env = assoc_env(name, &Mono(Box::new(fresh.clone())), env);
+            let (subrule, mono) = algw(&new_env, expr);
+            (HashMap::new(), TArrow(Box::new(fresh.clone().subst(&subrule)), Box::new(mono)))
+        }
+        EApp(ref e1, ref e2) => {
+            let (s1, m1) = algw(env, e1);
+            let (s2, m2) = algw(env, e2);
+            let fresh = get_new_var();
+            let s3 = unify(&m1.subst(&s2), &TArrow(Box::new(m2), Box::new(fresh.clone())));
+            (compose(&s3, &compose(&s2, &s1)), fresh.clone().subst(&s3))
+        }
+        ELet(ref name, ref value, ref body) => {
+            let (s1, value_mono) = algw(env, value);
+            let env1 = env.subst(&s1);
+            let g = generalize(&env1, &value_mono);
+            let env2 = assoc_env(name, &g, &env1);
+            let (s2, body_mono) = algw(&env2, body);
+            (compose(&s2, &s1), body_mono)
+        }
     }
 }
