@@ -4,6 +4,12 @@ use types::*;
 
 static mut VAR: u8 = 97;
 
+pub fn reset_var() {
+    unsafe {
+        VAR = 97;
+    }
+}
+
 fn get_new_var() -> Type {
     unsafe {
         let fresh = TVar(VAR as char);
@@ -24,16 +30,21 @@ fn occurs(tname: &char, t: &Type) -> bool {
 }
 
 pub fn generalize(env: &HashMap<&'static str, Scheme>, t: &Type) -> Scheme {
-    t.free_vars().difference(&env.free_vars()).fold(Mono(Box::new((*t).clone())), |scheme, fv| {
+    let mut vars: Vec<char> = t.free_vars().difference(&env.free_vars()).cloned().collect();
+    vars.sort();
+    vars.reverse();
+    vars.iter().fold(Mono(Box::new((*t).clone())), |scheme, fv| {
         Poly(*fv, Box::new(scheme))
     })
 }
 
 fn instantiate(t: &Scheme) -> Type {
     let mut env: HashMap<char, Type> = HashMap::new();
-    for var in t.all_vars().difference(&t.free_vars()) {
+    let mut vars: Vec<char> = t.all_vars().difference(&t.free_vars()).cloned().collect();
+    vars.sort();
+    for var in vars {
         unsafe {
-            env.insert(*var, TVar(VAR as char));
+            env.insert(var, TVar(VAR as char));
             VAR += 1;
         }
     }
@@ -84,7 +95,7 @@ fn algw(env: &HashMap<&'static str, Scheme>, expr: &Expr) -> (HashMap<char, Type
             let fresh = get_new_var();
             let new_env = assoc_env(name, &Mono(Box::new(fresh.clone())), env);
             let (subrule, mono) = algw(&new_env, expr);
-            (HashMap::new(), TArrow(Box::new(fresh.clone().subst(&subrule)), Box::new(mono)))
+            (subrule.clone(), TArrow(Box::new(fresh.clone().subst(&subrule.clone())), Box::new(mono)))
         }
         EApp(ref e1, ref e2) => {
             let (s1, m1) = algw(env, e1);
