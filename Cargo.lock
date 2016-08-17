@@ -10,3 +10,5 @@ name = "stainless"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
+[metadata]
+"checksum stainless 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "08dc26c706efcaefc81e3a200beca1546bdf2f0692e41730dfb9577d9bb5da5c"

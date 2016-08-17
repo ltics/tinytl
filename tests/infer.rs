@@ -20,12 +20,23 @@ describe! infer_spec {
         let mono2 = &TArrow(Box::new(TVar('b')), Box::new(TVar('b')));
         let mono3 = &TArrow(Box::new(TVar('a')), Box::new(TVar('b')));
         let mono4 = &TArrow(Box::new(TArrow(Box::new(TVar('b')), Box::new(TVar('c')))), Box::new(TVar('c')));
+        let mono5 = &TArrow(Box::new(TVar('a')), Box::new(TInt));
+        let mono6 = &TArrow(Box::new(TVar('a')), Box::new(TVar('b')));
+        // 𝐒[a → Z] ∘ 𝐒[a → b]
+        let mono7 = &TArrow(Box::new(TVar('a')), Box::new(TInt));
+        let mono8 = &TArrow(Box::new(TVar('b')), Box::new(TVar('a')));
         let subrule1 = unify(mono1, mono2);
         let subrule2 = unify(mono3, mono4);
+        let subrule3 = unify(mono5, mono6);
+        let subrule4 = unify(mono7, mono8);
         assert_eq!(subrule1.get(&'a'), Some(&TInt));
         assert_eq!(subrule1.get(&'b'), Some(&TInt));
         assert_eq!(subrule2.get(&'a'), Some(&TArrow(Box::new(TVar('c')), Box::new(TVar('c')))));
         assert_eq!(subrule2.get(&'b'), Some(&TVar('c')));
+        assert_eq!(subrule3.get(&'a'), None); //checkout make_single_subrule for reason
+        assert_eq!(subrule3.get(&'b'), Some(&TInt));
+        assert_eq!(subrule4.get(&'a'), Some(&TInt));
+        assert_eq!(subrule4.get(&'b'), Some(&TInt));
     }
 
     it "should infer" {
