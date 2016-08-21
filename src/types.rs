@@ -53,11 +53,12 @@ impl Display for Scheme {
 #[allow(dead_code)]
 pub fn compose(s2: &HashMap<char, Type>, s1: &HashMap<char, Type>) -> HashMap<char, Type> {
     let mut s3: HashMap<char, Type> = HashMap::new();
-    for (key, val) in s1.iter() {
-        s3.insert(*key, val.subst(s2));
-    }
+    //apply (s2 ∘ s1) = apply s2 ∘ apply s1, so s1 should take precedence over any bindings for the same type variable.
     for (key, val) in s2.iter() {
         s3.insert(*key, val.clone());
+    }
+    for (key, val) in s1.iter() {
+        s3.insert(*key, val.subst(s2));
     }
     s3
 }
